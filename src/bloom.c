@@ -161,7 +161,7 @@ int bloom_reset(struct bloom * bloom)
 }
 
 
-const char * bloom_version()
+const char * bloom_version(void)
 {
   return MAKESTRING(BLOOM_VERSION);
 }
