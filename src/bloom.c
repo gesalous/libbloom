@@ -8,7 +8,7 @@
 /*
  * Refer to bloom.h for documentation on the public interfaces.
  */
-
+#define _GNU_SOURCE
 #include <assert.h>
 #include <fcntl.h>
 #include <math.h>
@@ -25,6 +25,8 @@
 
 #define MAKESTRING(n) STRING(n)
 #define STRING(n) #n
+
+#define BLOOM_ALIGNMENT (512)
 
 inline static int test_bit_set_bit(unsigned char *buf, unsigned int x,
                                    int set_bit) {
@@ -102,7 +104,7 @@ int bloom_init(struct bloom *bloom, int entries, double error) {
 
   bloom->hashes = (int)ceil(0.693147180559945 * bloom->bpe); // ln(2)
 
-  posix_memalign((void *)&bloom->bf, 512, bloom->bytes);
+  posix_memalign((void **)&bloom->bf, BLOOM_ALIGNMENT, bloom->bytes);
   if (bloom->bf == NULL) { // LCOV_EXCL_START
     return 1;
   } // LCOV_EXCL_STOP
@@ -112,12 +114,117 @@ int bloom_init(struct bloom *bloom, int entries, double error) {
 }
 
 struct bloom *bloom_init2(int entries, double error) {
-  struct bloom *bloom = calloc(1UL, sizeof(struct bloom));
+  struct bloom *bloom = NULL;
+  if (posix_memalign((void **)&bloom, BLOOM_ALIGNMENT, sizeof(struct bloom)) !=
+      0) {
+    printf("FATAL posix_memalign failed");
+    return NULL;
+  }
+  memset(bloom, 0x00, sizeof(struct bloom));
   int ret = bloom_init(bloom, entries, error);
   if (!ret) {
     free(bloom);
     return NULL;
   }
+  return bloom;
+}
+
+static int bloom_read_from_file(int file_desc, off_t file_offset, char *buffer,
+                                size_t buffer_size) {
+
+  ssize_t bytes_read = 0;
+
+  while (bytes_read < sizeof(struct bloom)) {
+    ssize_t num_bytes = pread(file_desc, &buffer[bytes_read],
+                              buffer_size - bytes_read, file_offset);
+    if (num_bytes < 0)
+      return 0;
+    bytes_read += num_bytes;
+  }
+  return 1;
+}
+
+static int bloom_append_to_file(int file_desc, char *buffer,
+                                size_t buffer_size) {
+
+  ssize_t bytes_written = 0;
+
+  while (bytes_written < sizeof(struct bloom)) {
+    ssize_t num_bytes =
+        write(file_desc, &buffer[bytes_written], buffer_size - bytes_written);
+    if (num_bytes < 0)
+      return 0;
+    bytes_written += num_bytes;
+  }
+  return 1;
+}
+/**
+ *@brief Persists the contents of a bloom filter in a file.
+ *@param bloom the bloom filter to be persisted.
+ *@param filename the path to the file.
+ * @return 1 on success 0 on failure.
+ */
+int bloom_persist(struct bloom *bloom, const char *filename) {
+  int file_desc =
+      open(filename, O_CREAT | O_APPEND | O_RDWR | O_DIRECT | O_SYNC);
+  if (file_desc < 0) {
+    printf("Failed to open bloom file %s", filename);
+    perror("Reason:");
+    return 0;
+  }
+  if (bloom_append_to_file(file_desc, (char *)bloom, sizeof(struct bloom)) <
+      0) {
+    printf("Failed to write bloom metadata into file %s", filename);
+    perror("Reason:");
+  }
+
+  if (bloom_append_to_file(file_desc, (char *)bloom, bloom->bytes) < 0) {
+    printf("Failed to write bloom data into file %s", filename);
+    perror("Reason:");
+  }
+
+  if (close(file_desc) < 0) {
+    printf("Failed to close file %s", filename);
+    return 0;
+  }
+
+  return 1;
+}
+
+/**
+ * @brief Recovers a bloom filter in memory from a file.
+ * @param The filename where the contents of the bloom filter are stored
+ *@return An in memory representation of the bloom_filter
+ */
+struct bloom *bloom_recover(char *filename) {
+  int file_desc = open(filename, O_RDONLY | O_DIRECT);
+  if (file_desc < 0) {
+    printf("Failed to open bloom file %s\n", filename);
+    perror("Reason:");
+    return 0;
+  }
+  struct bloom *bloom = NULL;
+  if (posix_memalign((void **)&bloom, BLOOM_ALIGNMENT, sizeof(struct bloom)) !=
+      0) {
+    printf("FATAL posix_memalign failed\n");
+    return NULL;
+  }
+  if (0 ==
+      bloom_read_from_file(file_desc, 0, (char *)bloom, sizeof(struct bloom))) {
+    printf("Failed to read from file %s\n", filename);
+    return NULL;
+  }
+
+  if (posix_memalign((void **)&bloom->bf, BLOOM_ALIGNMENT, bloom->bytes) < 0) {
+    printf("Failed to allocate memory for the bf\n");
+    return NULL;
+  }
+  if (0 == bloom_read_from_file(file_desc, sizeof(struct bloom),
+                                (char *)bloom->bf, bloom->bytes)) {
+    printf("Failed to read actual bloom filter data\n");
+    return NULL;
+  }
+
   return bloom;
 }
 

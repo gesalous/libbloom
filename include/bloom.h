@@ -23,10 +23,10 @@ struct bloom {
   // Client code may read these values if desired. Client code MUST NOT
   // modify any of these.
   int entries;
-  double error;
   int bits;
   int bytes;
   int hashes;
+  double error;
 
   // Fields below are private to the implementation. These may go away or
   // change incompatibly at any moment. Client code MUST NOT access or rely
@@ -34,7 +34,7 @@ struct bloom {
   double bpe;
   unsigned char *bf;
   int ready;
-};
+} __attribute__((packed));
 
 /** ***************************************************************************
  * Initialize the bloom filter for use.
@@ -92,6 +92,20 @@ int bloom_init(struct bloom *bloom, int entries, double error);
  *
  */
 struct bloom *bloom_init2(int entries, double error);
+
+/**
+ * @brief Appends and persists the data of a bloom filter to a file.
+ * @param bloom the state of the bloom filter to save
+ * @param the filename where to write the data
+ */
+int bloom_persist(struct bloom *bloom, const char *filename);
+
+/**
+ * @brief Recovers the data of a bloom filter from a file to memory.
+ * @param bloom the state of the bloom filter to save
+ * @param the filename where to write the data
+ */
+struct bloom *bloom_recover(char *filename);
 
 /** ***************************************************************************
  * Deprecated, use bloom_init()
