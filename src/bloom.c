@@ -20,18 +20,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "bloom.h"
-#include "murmurhash2.h"
+#include "../include/bloom.h"
+#include "../include/murmurhash2.h"
 
 #define MAKESTRING(n) STRING(n)
 #define STRING(n) #n
 
-
-inline static int test_bit_set_bit(unsigned char * buf,
-                                   unsigned int x, int set_bit)
-{
+inline static int test_bit_set_bit(unsigned char *buf, unsigned int x,
+                                   int set_bit) {
   unsigned int byte = x >> 3;
-  unsigned char c = buf[byte];        // expensive memory access
+  unsigned char c = buf[byte]; // expensive memory access
   unsigned int mask = 1 << (x % 8);
 
   if (c & mask) {
@@ -44,10 +42,8 @@ inline static int test_bit_set_bit(unsigned char * buf,
   }
 }
 
-
-static int bloom_check_add(struct bloom * bloom,
-                           const void * buffer, int len, int add)
-{
+static int bloom_check_add(struct bloom *bloom, const void *buffer, int len,
+                           int add) {
   if (bloom->ready == 0) {
     printf("bloom at %p not initialized!\n", (void *)bloom);
     return -1;
@@ -60,7 +56,7 @@ static int bloom_check_add(struct bloom * bloom,
   register unsigned int i;
 
   for (i = 0; i < bloom->hashes; i++) {
-    x = (a + i*b) % bloom->bits;
+    x = (a + i * b) % bloom->bits;
     if (test_bit_set_bit(bloom->bf, x, add)) {
       hits++;
     } else if (!add) {
@@ -70,22 +66,18 @@ static int bloom_check_add(struct bloom * bloom,
   }
 
   if (hits == bloom->hashes) {
-    return 1;                // 1 == element already in (or collision)
+    return 1; // 1 == element already in (or collision)
   }
 
   return 0;
 }
 
-
-int bloom_init_size(struct bloom * bloom, int entries, double error,
-                    unsigned int cache_size)
-{
+int bloom_init_size(struct bloom *bloom, int entries, double error,
+                    unsigned int cache_size) {
   return bloom_init(bloom, entries, error);
 }
 
-
-int bloom_init(struct bloom * bloom, int entries, double error)
-{
+int bloom_init(struct bloom *bloom, int entries, double error) {
   bloom->ready = 0;
 
   if (entries < 1000 || error == 0) {
@@ -108,32 +100,36 @@ int bloom_init(struct bloom * bloom, int entries, double error)
     bloom->bytes = bloom->bits / 8;
   }
 
-  bloom->hashes = (int)ceil(0.693147180559945 * bloom->bpe);  // ln(2)
+  bloom->hashes = (int)ceil(0.693147180559945 * bloom->bpe); // ln(2)
 
-  posix_memalign((void *)&bloom->bf,512,bloom->bytes);
-  if (bloom->bf == NULL) {                                   // LCOV_EXCL_START
+  posix_memalign((void *)&bloom->bf, 512, bloom->bytes);
+  if (bloom->bf == NULL) { // LCOV_EXCL_START
     return 1;
-  }                                                          // LCOV_EXCL_STOP
+  } // LCOV_EXCL_STOP
 
   bloom->ready = 1;
   return 0;
 }
 
+struct bloom *bloom_init2(int entries, double error) {
+  struct bloom *bloom = calloc(1UL, sizeof(struct bloom));
+  int ret = bloom_init(bloom, entries, error);
+  if (!ret) {
+    free(bloom);
+    return NULL;
+  }
+  return bloom;
+}
 
-int bloom_check(struct bloom * bloom, const void * buffer, int len)
-{
+int bloom_check(struct bloom *bloom, const void *buffer, int len) {
   return bloom_check_add(bloom, buffer, len, 0);
 }
 
-
-int bloom_add(struct bloom * bloom, const void * buffer, int len)
-{
+int bloom_add(struct bloom *bloom, const void *buffer, int len) {
   return bloom_check_add(bloom, buffer, len, 1);
 }
 
-
-void bloom_print(struct bloom * bloom)
-{
+void bloom_print(struct bloom *bloom) {
   printf("bloom at %p\n", (void *)bloom);
   printf(" ->entries = %d\n", bloom->entries);
   printf(" ->error = %f\n", bloom->error);
@@ -143,25 +139,18 @@ void bloom_print(struct bloom * bloom)
   printf(" ->hash functions = %d\n", bloom->hashes);
 }
 
-
-void bloom_free(struct bloom * bloom)
-{
+void bloom_free(struct bloom *bloom) {
   if (bloom->ready) {
     free(bloom->bf);
   }
   bloom->ready = 0;
 }
 
-
-int bloom_reset(struct bloom * bloom)
-{
-  if (!bloom->ready) return 1;
+int bloom_reset(struct bloom *bloom) {
+  if (!bloom->ready)
+    return 1;
   memset(bloom->bf, 0, bloom->bytes);
   return 0;
 }
 
-
-const char * bloom_version(void)
-{
-  return MAKESTRING(BLOOM_VERSION);
-}
+const char *bloom_version(void) { return MAKESTRING(BLOOM_VERSION); }
