@@ -122,7 +122,7 @@ struct bloom *bloom_init2(int entries, double error) {
   }
   memset(bloom, 0x00, sizeof(struct bloom));
   int ret = bloom_init(bloom, entries, error);
-  if (!ret) {
+  if (ret) {
     free(bloom);
     return NULL;
   }
