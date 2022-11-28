@@ -117,7 +117,7 @@ struct bloom *bloom_init2(int entries, double error) {
   struct bloom *bloom = NULL;
   if (posix_memalign((void **)&bloom, BLOOM_ALIGNMENT, sizeof(struct bloom)) !=
       0) {
-    printf("FATAL posix_memalign failed");
+    printf("FATAL posix_memalign failed\n");
     return NULL;
   }
   memset(bloom, 0x00, sizeof(struct bloom));
@@ -168,23 +168,23 @@ int bloom_persist(struct bloom *bloom, const char *filename) {
   int file_desc =
       open(filename, O_CREAT | O_APPEND | O_RDWR | O_DIRECT | O_SYNC);
   if (file_desc < 0) {
-    printf("Failed to open bloom file %s", filename);
+    printf("Failed to open bloom file %s\n", filename);
     perror("Reason:");
     return 0;
   }
   if (bloom_append_to_file(file_desc, (char *)bloom, sizeof(struct bloom)) <
       0) {
-    printf("Failed to write bloom metadata into file %s", filename);
+    printf("Failed to write bloom metadata into file %s\n", filename);
     perror("Reason:");
   }
 
   if (bloom_append_to_file(file_desc, (char *)bloom, bloom->bytes) < 0) {
-    printf("Failed to write bloom data into file %s", filename);
+    printf("Failed to write bloom data into file %s\n", filename);
     perror("Reason:");
   }
 
   if (close(file_desc) < 0) {
-    printf("Failed to close file %s", filename);
+    printf("Failed to close file %s\n", filename);
     return 0;
   }
 
