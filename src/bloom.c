@@ -105,7 +105,9 @@ int bloom_init(struct bloom *bloom, int entries, double error) {
   bloom->hashes = (int)ceil(0.693147180559945 * bloom->bpe); // ln(2)
 
   posix_memalign((void **)&bloom->bf, BLOOM_ALIGNMENT, bloom->bytes);
+
   if (bloom->bf == NULL) { // LCOV_EXCL_START
+    printf("Fatal failed to allocate memory for the bloom filter\n");
     return 1;
   } // LCOV_EXCL_STOP
   memset(bloom->bf, 0x00, bloom->bytes);
