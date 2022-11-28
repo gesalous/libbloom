@@ -108,7 +108,7 @@ int bloom_init(struct bloom *bloom, int entries, double error) {
   if (bloom->bf == NULL) { // LCOV_EXCL_START
     return 1;
   } // LCOV_EXCL_STOP
-
+  memset(bloom->bf, 0x00, bloom->bytes);
   bloom->ready = 1;
   return 0;
 }
