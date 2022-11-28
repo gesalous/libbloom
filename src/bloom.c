@@ -168,7 +168,7 @@ static int bloom_append_to_file(int file_desc, char *buffer,
  */
 int bloom_persist(struct bloom *bloom, const char *filename) {
   int file_desc =
-      open(filename, O_CREAT | O_APPEND | O_WRONLY | O_DIRECT | O_SYNC);
+      open(filename, O_CREAT | O_APPEND | O_WRONLY | O_DIRECT | O_SYNC, 0644);
   if (file_desc < 0) {
     printf("Failed to open bloom file %s\n", filename);
     perror("Reason:");
