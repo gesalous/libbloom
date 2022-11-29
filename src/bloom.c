@@ -136,7 +136,7 @@ static int bloom_read_from_file(int file_desc, off_t file_offset, char *buffer,
 
   ssize_t bytes_read = 0;
 
-  while (bytes_read < sizeof(struct bloom)) {
+  while (bytes_read < buffer_size) {
     ssize_t num_bytes = pread(file_desc, &buffer[bytes_read],
                               buffer_size - bytes_read, file_offset);
     if (num_bytes < 0)
@@ -151,7 +151,7 @@ static int bloom_append_to_file(int file_desc, char *buffer,
 
   ssize_t bytes_written = 0;
 
-  while (bytes_written < sizeof(struct bloom)) {
+  while (bytes_written < buffer_size) {
     ssize_t num_bytes =
         write(file_desc, &buffer[bytes_written], buffer_size - bytes_written);
     if (num_bytes < 0)
