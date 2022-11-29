@@ -96,16 +96,16 @@ struct bloom *bloom_init2(int entries, double error);
 /**
  * @brief Appends and persists the data of a bloom filter to a file.
  * @param bloom the state of the bloom filter to save
- * @param the filename where to write the data
+ * @param file_desc descriptor to the file where to write the data
  */
-int bloom_persist(struct bloom *bloom, const char *filename);
+int bloom_persist(struct bloom *bloom, int file_desc);
 
 /**
  * @brief Recovers the data of a bloom filter from a file to memory.
  * @param bloom the state of the bloom filter to save
- * @param the filename where to write the data
+ * @param file_desc descriptor where to read the data
  */
-struct bloom *bloom_recover(char *filename);
+struct bloom *bloom_recover(int file_desc);
 
 /** ***************************************************************************
  * Deprecated, use bloom_init()

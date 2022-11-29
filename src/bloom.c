@@ -160,55 +160,28 @@ static int bloom_append_to_file(int file_desc, char *buffer,
   }
   return 1;
 }
-/**
- *@brief Persists the contents of a bloom filter in a file.
- *@param bloom the bloom filter to be persisted.
- *@param filename the path to the file.
- * @return 1 on success 0 on failure.
- */
-int bloom_persist(struct bloom *bloom, const char *filename) {
-  int file_desc =
-      open(filename, O_CREAT | O_APPEND | O_WRONLY | O_DIRECT | O_SYNC, 0644);
-  if (file_desc < 0) {
-    printf("Failed to open bloom file %s\n", filename);
-    perror("Reason:");
-    return 0;
-  }
+
+int bloom_persist(struct bloom *bloom, int file_desc) {
   if (bloom_append_to_file(file_desc, (char *)bloom, sizeof(struct bloom)) <
       0) {
-    printf("Failed to write bloom metadata into file %s\n", filename);
-    perror("Reason:");
+    printf("Failed to write bloom metadata into file\n");
+    perror("Reason");
   }
 
   if (bloom_append_to_file(file_desc, (char *)bloom, bloom->bytes) < 0) {
-    printf("Failed to write bloom data into file %s\n", filename);
+    printf("Failed to write bloom data into file\n");
     perror("Reason:");
   }
 
   if (fsync(file_desc) < 0) {
-    printf("Failed to sync file: %s", filename);
-    return 0;
-  }
-  if (close(file_desc) < 0) {
-    printf("Failed to close file %s\n", filename);
+    printf("Failed to sync file\n");
     return 0;
   }
 
   return 1;
 }
 
-/**
- * @brief Recovers a bloom filter in memory from a file.
- * @param The filename where the contents of the bloom filter are stored
- *@return An in memory representation of the bloom_filter
- */
-struct bloom *bloom_recover(char *filename) {
-  int file_desc = open(filename, O_RDONLY | O_DIRECT);
-  if (file_desc < 0) {
-    printf("Failed to open bloom file %s\n", filename);
-    perror("Reason:");
-    return 0;
-  }
+struct bloom *bloom_recover(int file_desc) {
   struct bloom *bloom = NULL;
   if (posix_memalign((void **)&bloom, BLOOM_ALIGNMENT, sizeof(struct bloom)) !=
       0) {
@@ -217,7 +190,8 @@ struct bloom *bloom_recover(char *filename) {
   }
   if (0 ==
       bloom_read_from_file(file_desc, 0, (char *)bloom, sizeof(struct bloom))) {
-    printf("Failed to read from file %s\n", filename);
+    printf("Failed to read from file\n");
+    perror("Reason");
     return NULL;
   }
 
@@ -228,6 +202,7 @@ struct bloom *bloom_recover(char *filename) {
   if (0 == bloom_read_from_file(file_desc, sizeof(struct bloom),
                                 (char *)bloom->bf, bloom->bytes)) {
     printf("Failed to read actual bloom filter data\n");
+    perror("Reason");
     return NULL;
   }
 
