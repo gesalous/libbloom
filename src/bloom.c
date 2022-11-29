@@ -117,7 +117,7 @@ int bloom_init(struct bloom *bloom, int entries, double error) {
 static size_t bloom_calculate_filter_size(struct bloom *bloom_filter) {
   size_t bloom_size = sizeof(struct bloom) + bloom_filter->bytes;
   if (bloom_size % BLOOM_ALIGNMENT != 0)
-    bloom_size += (bloom_size - (bloom_size % BLOOM_ALIGNMENT));
+    bloom_size += (BLOOM_ALIGNMENT - (bloom_size % BLOOM_ALIGNMENT));
   return bloom_size;
 }
 
@@ -149,8 +149,6 @@ struct bloom *bloom_init2(int entries, double error) {
 
   char *bloom_filter_buf = NULL;
   size_t bloom_size = bloom_calculate_filter_size(&tmp_bloom);
-  if (bloom_size % BLOOM_ALIGNMENT != 0)
-    bloom_size += (bloom_size - (bloom_size % BLOOM_ALIGNMENT));
 
   if (posix_memalign((void **)&bloom_filter_buf, BLOOM_ALIGNMENT, bloom_size)) {
     printf("memalign of %lu bytes failed\n", bloom_size);
