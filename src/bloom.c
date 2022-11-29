@@ -242,6 +242,8 @@ void bloom_print(struct bloom *bloom) {
   printf(" ->hash functions = %d\n", bloom->hashes);
 }
 
+void bloom_free2(struct bloom *bloom) { free(bloom); }
+
 void bloom_free(struct bloom *bloom) {
   if (bloom->ready) {
     free(bloom->bf);

@@ -174,6 +174,7 @@ void bloom_print(struct bloom *bloom);
  */
 void bloom_free(struct bloom *bloom);
 
+void bloom_free2(struct bloom *bloom);
 /** ***************************************************************************
  * Erase internal storage.
  *
