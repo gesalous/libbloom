@@ -224,7 +224,9 @@ struct bloom *bloom_recover(int file_desc) {
     free(bloom_filter_buf);
     return NULL;
   }
-  return (struct bloom *)bloom_filter_buf;
+  struct bloom *bloom_filter = (struct bloom *)bloom_filter_buf;
+  bloom_filter->bf = (unsigned char *)&bloom_filter_buf[sizeof(struct bloom)];
+  return bloom_filter;
 }
 
 int bloom_check(struct bloom *bloom, const void *buffer, int len) {
