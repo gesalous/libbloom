@@ -184,8 +184,8 @@ static int bloom_append_to_file(int file_desc, char *buffer,
   ssize_t bytes_written = 0;
 
   while (bytes_written < buffer_size) {
-    ssize_t num_bytes =
-        write(file_desc, &buffer[bytes_written], buffer_size - bytes_written);
+    ssize_t num_bytes = pwrite(file_desc, &buffer[bytes_written],
+                               buffer_size - bytes_written, bytes_written);
     if (num_bytes < 0)
       return -1;
     bytes_written += num_bytes;
