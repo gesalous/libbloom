@@ -168,8 +168,9 @@ static int bloom_read_from_file(int file_desc, off_t file_offset, char *buffer,
   ssize_t bytes_read = 0;
 
   while (bytes_read < buffer_size) {
-    ssize_t num_bytes = pread(file_desc, &buffer[bytes_read],
-                              buffer_size - bytes_read, file_offset);
+    ssize_t num_bytes =
+        pread(file_desc, &buffer[bytes_read], buffer_size - bytes_read,
+              file_offset + bytes_read);
     if (num_bytes < 0)
       return -1;
     bytes_read += num_bytes;
