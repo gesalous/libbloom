@@ -217,6 +217,8 @@ struct bloom *bloom_recover(int file_desc) {
     printf("Failed to allocate buffer to recover bloom filter\n");
     return NULL;
   }
+  memset(bloom_filter_buf, 0x00, bloom_size);
+
   if (bloom_read_from_file(file_desc, 0, bloom_filter_buf, bloom_size)) {
     printf("Failed to read bloom filter from file\n");
     free(bloom_filter_buf);
