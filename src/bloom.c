@@ -74,12 +74,12 @@ static int bloom_check_add(struct bloom *bloom, const void *buffer, int len,
   return 0;
 }
 
-int bloom_init_size(struct bloom *bloom, int entries, double error,
+int bloom_init_size(struct bloom *bloom, int64_t entries, double error,
                     unsigned int cache_size) {
   return bloom_init(bloom, entries, error);
 }
 
-int bloom_init(struct bloom *bloom, int entries, double error) {
+int bloom_init(struct bloom *bloom, int64_t entries, double error) {
   bloom->ready = 0;
 
   if (entries < 1000 || error == 0) {
@@ -94,7 +94,7 @@ int bloom_init(struct bloom *bloom, int entries, double error) {
   bloom->bpe = -(num / denom);
 
   double dentries = (double)entries;
-  bloom->bits = (int)(dentries * bloom->bpe);
+  bloom->bits = (dentries * bloom->bpe);
 
   if (bloom->bits % 8) {
     bloom->bytes = (bloom->bits / 8) + 1;
@@ -121,7 +121,7 @@ static size_t bloom_calculate_filter_size(struct bloom *bloom_filter) {
   return bloom_size;
 }
 
-struct bloom *bloom_init2(int entries, double error) {
+struct bloom *bloom_init2(int64_t entries, double error) {
   struct bloom tmp_bloom = {0};
 
   if (entries < 1000 || error == 0) {
@@ -136,7 +136,8 @@ struct bloom *bloom_init2(int entries, double error) {
   tmp_bloom.bpe = -(num / denom);
 
   double dentries = (double)entries;
-  tmp_bloom.bits = (int)(dentries * tmp_bloom.bpe);
+  tmp_bloom.bits = (dentries * tmp_bloom.bpe);
+  // fprintf(stderr,"Bits are = %ld\n",tmp_bloom.bits);
 
   if (tmp_bloom.bits % 8) {
     tmp_bloom.bytes = (tmp_bloom.bits / 8) + 1;
@@ -148,6 +149,7 @@ struct bloom *bloom_init2(int entries, double error) {
   tmp_bloom.ready = 1;
 
   char *bloom_filter_buf = NULL;
+  // fprintf(stderr, "bloom bytes are: %ld bpe = %lf\n",tmp_bloom.bytes,tmp_bloom.bpe);
   size_t bloom_size = bloom_calculate_filter_size(&tmp_bloom);
 
   if (posix_memalign((void **)&bloom_filter_buf, BLOOM_ALIGNMENT, bloom_size)) {
@@ -214,13 +216,14 @@ struct bloom *bloom_recover(int file_desc) {
   off64_t bloom_size = lseek64(file_desc, 0, SEEK_END);
   char *bloom_filter_buf = NULL;
   if (posix_memalign((void **)&bloom_filter_buf, BLOOM_ALIGNMENT, bloom_size)) {
-    printf("Failed to allocate buffer to recover bloom filter\n");
+    fprintf(stderr,"Failed to allocate buffer to recover bloom filter\n");
     return NULL;
   }
   memset(bloom_filter_buf, 0x00, bloom_size);
 
   if (bloom_read_from_file(file_desc, 0, bloom_filter_buf, bloom_size)) {
-    printf("Failed to read bloom filter from file\n");
+    fprintf(stderr,"Failed to read bloom filter from file\n");
+    perror("Reason: ");
     free(bloom_filter_buf);
     return NULL;
   }

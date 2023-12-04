@@ -7,7 +7,7 @@
 
 #ifndef _BLOOM_H
 #define _BLOOM_H
-
+#include <stdint.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,10 +22,10 @@ struct bloom {
   // These fields are part of the public interface of this structure.
   // Client code may read these values if desired. Client code MUST NOT
   // modify any of these.
-  int entries;
-  int bits;
-  int bytes;
-  int hashes;
+  int64_t entries;
+  int64_t bits;
+  int64_t bytes;
+  int64_t hashes;
   double error;
 
   // Fields below are private to the implementation. These may go away or
@@ -63,7 +63,7 @@ struct bloom {
  *     1 - on failure
  *
  */
-int bloom_init(struct bloom *bloom, int entries, double error);
+int bloom_init(struct bloom *bloom, int64_t entries, double error);
 
 /** ***************************************************************************
  * Allocates and initializes the bloom filter for use.
@@ -91,7 +91,7 @@ int bloom_init(struct bloom *bloom, int entries, double error);
  *     NULL - on failure
  *
  */
-struct bloom *bloom_init2(int entries, double error);
+struct bloom *bloom_init2(int64_t entries, double error);
 
 /**
  * @brief Appends and persists the data of a bloom filter to a file.
@@ -111,7 +111,7 @@ struct bloom *bloom_recover(int file_desc);
  * Deprecated, use bloom_init()
  *
  */
-int bloom_init_size(struct bloom *bloom, int entries, double error,
+int bloom_init_size(struct bloom *bloom, int64_t entries, double error,
                     unsigned int cache_size);
 
 /** ***************************************************************************

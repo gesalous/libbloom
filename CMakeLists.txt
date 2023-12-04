@@ -31,10 +31,17 @@ set(
   src/MurmurHash2.c
 )
 
+
+find_library(MATH_LIBRARY NAMES m REQUIRED)
 include_directories(murmur2)
 add_library(${PROJECT_NAME} ${SOURCE_FILES})
+target_link_libraries(${PROJECT_NAME} ${MATH_LIBRARY})
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+
+add_executable(test_allocation tests/test_allocation.c)
+target_link_libraries(test_allocation ${PROJECT_NAME})
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC
