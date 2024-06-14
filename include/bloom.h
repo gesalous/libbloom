@@ -93,6 +93,9 @@ int bloom_init(struct bloom *bloom, int64_t entries, double error);
  */
 struct bloom *bloom_init2(int64_t entries, double error);
 
+struct bloom *bloom_init_with_buffer(char *bf_buffer, uint32_t bf_buffer_size,
+                                     int64_t entries, double error);
+
 /**
  * @brief Appends and persists the data of a bloom filter to a file.
  * @param bloom the state of the bloom filter to save

@@ -122,11 +122,16 @@ static size_t bloom_calculate_filter_size(struct bloom *bloom_filter) {
 }
 
 struct bloom *bloom_init2(int64_t entries, double error) {
+  return bloom_init_with_buffer(NULL,0, entries, error);
+}
+
+struct bloom *bloom_init_with_buffer(char *bf_buffer, uint32_t bf_buffer_size,
+                                     int64_t entries, double error) {
+
   struct bloom tmp_bloom = {0};
 
-  if (entries < 1000 || error == 0) {
+  if (entries < 1000 || error == 0)
     return NULL;
-  }
 
   tmp_bloom.entries = entries;
   tmp_bloom.error = error;
@@ -148,19 +153,28 @@ struct bloom *bloom_init2(int64_t entries, double error) {
   tmp_bloom.hashes = (int)ceil(0.693147180559945 * tmp_bloom.bpe); // ln(2)
   tmp_bloom.ready = 1;
 
-  char *bloom_filter_buf = NULL;
-  // fprintf(stderr, "bloom bytes are: %ld bpe = %lf\n",tmp_bloom.bytes,tmp_bloom.bpe);
+  // fprintf(stderr, "bloom bytes are: %ld bpe =
+  // %lf\n",tmp_bloom.bytes,tmp_bloom.bpe);
   size_t bloom_size = bloom_calculate_filter_size(&tmp_bloom);
-
-  if (posix_memalign((void **)&bloom_filter_buf, BLOOM_ALIGNMENT, bloom_size)) {
-    printf("memalign of %lu bytes failed\n", bloom_size);
+  if (bf_buffer && bloom_size > bf_buffer_size) {
+    fprintf(stderr,
+            "Buffer to host the Bloom Filter too small given: %u needs: %lu\n",
+            bf_buffer_size, bloom_size);
     return NULL;
   }
-  memset(bloom_filter_buf, 0x00, bloom_size);
 
-  struct bloom *bloom_filter = (struct bloom *)bloom_filter_buf;
+  int ret = bf_buffer ? 0
+                      : posix_memalign((void **)&bf_buffer, BLOOM_ALIGNMENT,
+                                       bloom_size);
+  if (ret) {
+    fprintf(stderr, "memalign of %lu bytes failed\n", bloom_size);
+    return NULL;
+  }
+  memset(bf_buffer, 0x00, bloom_size);
+
+  struct bloom *bloom_filter = (struct bloom *)bf_buffer;
   *bloom_filter = tmp_bloom;
-  bloom_filter->bf = (unsigned char *)&bloom_filter_buf[sizeof(struct bloom)];
+  bloom_filter->bf = (unsigned char *)&bf_buffer[sizeof(struct bloom)];
   return bloom_filter;
 }
 
