@@ -40,8 +40,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 
-add_executable(test_allocation tests/test_allocation.c)
-target_link_libraries(test_allocation ${PROJECT_NAME})
+add_executable(test_init_with_buffer tests/test_init_with_buffer.c)
+target_link_libraries(test_init_with_buffer ${PROJECT_NAME})
 
 target_include_directories(
   ${PROJECT_NAME} PUBLIC
