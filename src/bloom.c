@@ -25,8 +25,7 @@
 
 #define MAKESTRING(n) STRING(n)
 #define STRING(n) #n
-
-#define BLOOM_ALIGNMENT (512)
+#define BLOOM_ALIGNMENT 512UL
 
 inline static int test_bit_set_bit(unsigned char *buf, unsigned int x,
                                    int set_bit) {
@@ -114,13 +113,6 @@ int bloom_init(struct bloom *bloom, int64_t entries, double error) {
   return 0;
 }
 
-static size_t bloom_calculate_filter_size(struct bloom *bloom_filter) {
-  size_t bloom_size = sizeof(struct bloom) + bloom_filter->bytes;
-  if (bloom_size % BLOOM_ALIGNMENT != 0)
-    bloom_size += (BLOOM_ALIGNMENT - (bloom_size % BLOOM_ALIGNMENT));
-  return bloom_size;
-}
-
 struct bloom *bloom_init2(int64_t entries, double error) {
   struct bloom tmp_bloom = {0};
 
@@ -150,7 +142,7 @@ struct bloom *bloom_init2(int64_t entries, double error) {
 
   char *bloom_filter_buf = NULL;
   // fprintf(stderr, "bloom bytes are: %ld bpe = %lf\n",tmp_bloom.bytes,tmp_bloom.bpe);
-  size_t bloom_size = bloom_calculate_filter_size(&tmp_bloom);
+  size_t bloom_size = bloom_get_size(&tmp_bloom);
 
   if (posix_memalign((void **)&bloom_filter_buf, BLOOM_ALIGNMENT, bloom_size)) {
     printf("memalign of %lu bytes failed\n", bloom_size);
@@ -196,7 +188,7 @@ static int bloom_append_to_file(int file_desc, char *buffer,
 }
 
 int bloom_persist(struct bloom *bloom, int file_desc) {
-  size_t bloom_size = bloom_calculate_filter_size(bloom);
+  size_t bloom_size = bloom_get_size(bloom);
 
   if (bloom_append_to_file(file_desc, (char *)bloom, bloom_size)) {
     printf("Failed to write bloom filter into file\n");
@@ -264,6 +256,10 @@ int bloom_reset(struct bloom *bloom) {
     return 1;
   memset(bloom->bf, 0, bloom->bytes);
   return 0;
+}
+
+uint64_t bloom_get_size(struct bloom *bloom) {
+  return bloom ? sizeof(struct bloom) + bloom->bytes : 0;
 }
 
 const char *bloom_version(void) { return MAKESTRING(BLOOM_VERSION); }

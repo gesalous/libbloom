@@ -192,6 +192,8 @@ void bloom_free2(struct bloom *bloom);
  */
 int bloom_reset(struct bloom *bloom);
 
+uint64_t bloom_get_size(struct bloom *bloom);
+
 /** ***************************************************************************
  * Returns version string compiled into library.
  *
