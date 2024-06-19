@@ -194,6 +194,8 @@ int bloom_reset(struct bloom *bloom);
 
 uint64_t bloom_get_size(struct bloom *bloom);
 
+struct bloom * bloom_copy(struct bloom *bf);
+
 /** ***************************************************************************
  * Returns version string compiled into library.
  *

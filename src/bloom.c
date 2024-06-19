@@ -262,4 +262,12 @@ uint64_t bloom_get_size(struct bloom *bloom) {
   return bloom ? sizeof(struct bloom) + bloom->bytes : 0;
 }
 
+struct bloom * bloom_copy(struct bloom *bf){
+  if(NULL == bf)
+    return NULL;
+  struct bloom *copy = calloc(1UL, bloom_get_size(bf));
+  memcpy(copy, bf, bloom_get_size(bf));
+  return copy;
+}
+
 const char *bloom_version(void) { return MAKESTRING(BLOOM_VERSION); }
