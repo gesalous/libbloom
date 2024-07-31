@@ -267,6 +267,7 @@ struct bloom * bloom_copy(struct bloom *bf){
     return NULL;
   struct bloom *copy = calloc(1UL, bloom_get_size(bf));
   memcpy(copy, bf, bloom_get_size(bf));
+  copy->bf = (unsigned char *)(uint64_t)copy + sizeof(struct bloom);
   return copy;
 }
 
