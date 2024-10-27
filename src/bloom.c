@@ -205,6 +205,10 @@ int bloom_persist(struct bloom *bloom, int file_desc) {
 }
 
 struct bloom *bloom_recover(int file_desc) {
+#ifdef __APPLE__
+#define lseek64 lseek
+  typedef off_t off64_t;
+#endif
   off64_t bloom_size = lseek64(file_desc, 0, SEEK_END);
   char *bloom_filter_buf = NULL;
   if (posix_memalign((void **)&bloom_filter_buf, BLOOM_ALIGNMENT, bloom_size)) {
